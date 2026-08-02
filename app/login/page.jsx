@@ -22,8 +22,8 @@ function LoginForm() {
     setLoading(false);
     if (!res.ok) return setError(data.error || "Login failed");
     
-    // Respect explicit ?next= parameter if present, otherwise use role-based redirect from backend
-    router.push(params.get("next") || data.redirectTo || "/dashboard");
+    // If explicit ?next= is present use it, otherwise redirect volunteers/admins to the select-action choice page
+    router.push(params.get("next") || data.redirectTo || "/dashboard/select-action");
   }
 
   return (
