@@ -55,7 +55,7 @@ export async function POST(req) {
     });
 
     // Determine redirect destination based on role (volunteer goes to new donation)
-    const redirectTo = user.role === "volunteer" ? "/donations/new" : "/dashboard";
+    const redirectTo = user.role === "volunteer" ? "/select-action" : "/dashboard";
 
     const res = NextResponse.json({
       success: true,
