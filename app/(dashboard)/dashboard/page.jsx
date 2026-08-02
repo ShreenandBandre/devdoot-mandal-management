@@ -33,13 +33,13 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/dashboard/donations/new"
+              href="/donations/new"
               className="bg-orange-700 hover:bg-orange-800 text-white font-medium px-4 py-2.5 rounded-xl transition-all shadow-sm text-sm text-center"
             >
               + New Donation
             </Link>
             <Link
-              href="/dashboard/expenses/new"
+              href="/expenses/new"
               className="border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 font-medium px-4 py-2.5 rounded-xl transition-all text-sm text-center shadow-sm"
             >
               + Add Expense
