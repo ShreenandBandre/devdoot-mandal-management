@@ -4,11 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import StatCard from "@/components/dashboard/StatCard";
 
+// Force dynamic execution to prevent caching stale data on Vercel deployment
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats").then((r) => r.json()).then(setStats);
+    fetch("/api/dashboard/stats", { cache: "no-store" })
+      .then((r) => r.json())
+      .then(setStats);
   }, []);
 
   if (!stats) {
