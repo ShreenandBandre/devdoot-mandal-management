@@ -3,6 +3,8 @@ import { connectDB } from "@/lib/db";
 import Donation from "@/lib/models/Donation";
 import Expense from "@/lib/models/Expense";
 import User from "@/lib/models/User";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
 
 function startOfDay(d = new Date()) {
   const x = new Date(d);
@@ -20,8 +22,21 @@ function startOfMonth(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
+    // Authentication security check to block unauthorized access to dashboard stats
+    const cookieStore = cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
+
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Invalid session token" }, { status: 401 });
+    }
+
     console.log("\n========== DASHBOARD API ==========");
 
     await connectDB();
