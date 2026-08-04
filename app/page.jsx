@@ -44,6 +44,13 @@ export default function HomePage() {
             >
               📋 View Collections
             </Link>
+
+            <Link
+              href="/expenses"
+              className="border border-white/40 hover:bg-white/10 text-white font-medium px-6 py-3 rounded-xl transition-all text-sm backdrop-blur-sm"
+            >
+              📝 View Expenses
+            </Link>
           </div>
         </div>
       </header>
