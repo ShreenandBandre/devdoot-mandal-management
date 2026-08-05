@@ -2,10 +2,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function ExpensesListPage() {
-  const router = useRouter();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -14,10 +12,8 @@ export default function ExpensesListPage() {
     async function loadData() {
       try {
         const res = await fetch("/api/expenses");
-        if (res.status === 403) {
-          // If volunteer tries to access, redirect them away
-          router.push("/donations/new");
-          return;
+        if (!res.ok) {
+          throw new Error("Failed to fetch expenses");
         }
         const data = await res.json();
         // Safe check to ensure expenses is always an array
@@ -31,7 +27,7 @@ export default function ExpensesListPage() {
       }
     }
     loadData();
-  }, [router]);
+  }, []);
 
   const filteredExpenses = Array.isArray(expenses) 
     ? (categoryFilter === "All" ? expenses : expenses.filter(e => e.category === categoryFilter))
