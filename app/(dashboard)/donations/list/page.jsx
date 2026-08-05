@@ -40,7 +40,7 @@ export default function DonationsListPage() {
           <p className="text-sm text-gray-600 mt-1">View all issued digital receipts and donor records.</p>
         </div>
         <Link
-          href="/dashboard/donations/new"
+          href="/donations/new"
           className="bg-orange-700 hover:bg-orange-800 text-white font-medium px-4 py-2.5 rounded-xl transition-all shadow-sm text-sm text-center"
         >
           + New Donation Entry
