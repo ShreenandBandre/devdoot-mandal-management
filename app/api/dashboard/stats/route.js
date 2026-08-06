@@ -24,7 +24,6 @@ function startOfMonth(d = new Date()) {
 
 export async function GET(req) {
   try {
-    // Authentication security check to block unauthorized access to dashboard stats
     const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -37,27 +36,7 @@ export async function GET(req) {
       return NextResponse.json({ error: "Invalid session token" }, { status: 401 });
     }
 
-    console.log("\n========== DASHBOARD API ==========");
-
     await connectDB();
-    console.log("✅ MongoDB Connected");
-
-    const count = await Donation.countDocuments();
-    console.log("Donation Count:", count);
-
-    const docs = await Donation.find().limit(3).lean();
-    console.log("Sample Donations:", docs);
-
-    const aggregateTest = await Donation.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
-
-    console.log("Aggregate Test:", aggregateTest);
 
     const today = startOfDay();
     const week = startOfWeek();
@@ -70,6 +49,8 @@ export async function GET(req) {
 
     const [
       todayCollection,
+      todayCashCollection,
+      todayUpiCollection,
       weekCollection,
       monthCollection,
       totalCollection,
@@ -83,152 +64,79 @@ export async function GET(req) {
       avgDonation,
       topDonation,
     ] = await Promise.all([
+      // Today Total
       Donation.aggregate([
-        {
-          $match: {
-            ...donationFilter,
-            createdAt: { $gte: today },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...donationFilter, createdAt: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Today Cash
       Donation.aggregate([
-        {
-          $match: {
-            ...donationFilter,
-            createdAt: { $gte: week },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...donationFilter, paymentMode: "Cash", createdAt: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Today UPI
       Donation.aggregate([
-        {
-          $match: {
-            ...donationFilter,
-            createdAt: { $gte: month },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...donationFilter, paymentMode: "UPI", createdAt: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Weekly Collection
       Donation.aggregate([
-        {
-          $match: donationFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...donationFilter, createdAt: { $gte: week } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Monthly Collection
       Donation.aggregate([
-        {
-          $match: {
-            ...donationFilter,
-            paymentMode: "Cash",
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...donationFilter, createdAt: { $gte: month } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Total Collection
       Donation.aggregate([
-        {
-          $match: {
-            ...donationFilter,
-            paymentMode: "UPI",
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: donationFilter },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Overall Cash Collection
+      Donation.aggregate([
+        { $match: { ...donationFilter, paymentMode: "Cash" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Overall UPI Collection
+      Donation.aggregate([
+        { $match: { ...donationFilter, paymentMode: "UPI" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
       Donation.countDocuments(donationFilter),
 
+      // Today Expenses
       Expense.aggregate([
-        {
-          $match: {
-            ...expenseFilter,
-            date: { $gte: today },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...expenseFilter, date: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Monthly Expenses
       Expense.aggregate([
-        {
-          $match: {
-            ...expenseFilter,
-            date: { $gte: month },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: { ...expenseFilter, date: { $gte: month } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
+      // Total Expenses
       Expense.aggregate([
-        {
-          $match: expenseFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: "$amount" },
-          },
-        },
+        { $match: expenseFilter },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
-      User.countDocuments({
-        role: "volunteer",
-        isActive: true,
-      }),
+      User.countDocuments({ role: "volunteer", isActive: true }),
 
       Donation.aggregate([
-        {
-          $match: donationFilter,
-        },
-        {
-          $group: {
-            _id: null,
-            avg: { $avg: "$amount" },
-          },
-        },
+        { $match: donationFilter },
+        { $group: { _id: null, avg: { $avg: "$amount" } } },
       ]).then((a) => a[0]?.avg || 0),
 
       Donation.findOne(donationFilter)
@@ -237,23 +145,11 @@ export async function GET(req) {
         .lean(),
     ]);
 
-    console.log("========== FINAL STATS ==========");
-    console.log({
-      todayCollection,
-      weekCollection,
-      monthCollection,
-      totalCollection,
-      cashCollection,
-      upiCollection,
-      totalReceipts,
-      volunteerCount,
-      avgDonation,
-      topDonation,
-    });
-
     return NextResponse.json({
       income: {
         todayCollection,
+        todayCashCollection,
+        todayUpiCollection,
         weekCollection,
         monthCollection,
         totalCollection,
@@ -277,14 +173,6 @@ export async function GET(req) {
     });
   } catch (err) {
     console.error("❌ Dashboard Error:", err);
-
-    return NextResponse.json(
-      {
-        error: err.message,
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

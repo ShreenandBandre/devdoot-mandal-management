@@ -57,13 +57,15 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Today's Collection" value={stats.income.todayCollection} money />
+            <StatCard label="Today's Collection" value={stats.income.todayCollection} money highlight />
+            <StatCard label="Today's Cash" value={stats.income.todayCashCollection} money />
+            <StatCard label="Today's UPI" value={stats.income.todayUpiCollection} money />
+            <StatCard label="Total Receipts" value={stats.income.totalReceipts} />
             <StatCard label="Weekly Collection" value={stats.income.weekCollection} money />
             <StatCard label="Monthly Collection" value={stats.income.monthCollection} money />
-            <StatCard label="Total Collection" value={stats.income.totalCollection} money highlight />
-            <StatCard label="Cash Collection" value={stats.income.cashCollection} money />
-            <StatCard label="UPI Collection" value={stats.income.upiCollection} money />
-            <StatCard label="Total Receipts" value={stats.income.totalReceipts} />
+            <StatCard label="Cash Collection (Total)" value={stats.income.cashCollection} money />
+            <StatCard label="UPI Collection (Total)" value={stats.income.upiCollection} money />
+            <StatCard label="Total Overall Collection" value={stats.income.totalCollection} money highlight />
           </div>
         </section>
 
@@ -85,7 +87,7 @@ export default function DashboardPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-orange-600"></span> Financial Balance
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Net Balance" value={stats.financial.netBalance} money highlight />
+            <StatCard label="Net Balance (In Hand)" value={stats.financial.netBalance} money highlight />
           </div>
         </section>
 
@@ -95,10 +97,10 @@ export default function DashboardPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Insights & Community
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard label="Total Volunteers" value={stats.other.volunteerCount} />
-            <StatCard label="Average Donation" value={stats.other.avgDonation} money />
+            <StatCard label="Total Active Volunteers" value={stats.other.volunteerCount} />
+            <StatCard label="Average Donation Size" value={stats.other.avgDonation} money />
             <StatCard
-              label="Highest Donation"
+              label="Highest Contribution"
               value={stats.other.topDonation?.amount || 0}
               money
               sub={stats.other.topDonation?.name}
@@ -109,3 +111,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
