@@ -63,7 +63,8 @@ export default async function HomePage() {
           </p>
 
           <p className="max-w-xl mx-auto text-amber-100/90 text-sm sm:text-base font-normal leading-relaxed">
-            संपूर्ण पारदर्शक आणि डिजिटल देणगी व्यवस्थापन प्रणाली. Welcome to our digital portal celebrating devotion with complete transparency.
+            संपूर्ण पारदर्शक आणि डिजिटल देणगी व्यवस्थापन प्रणाली.
+            Welcome to our digital portal celebrating devotion with complete transparency.
           </p>
 
           {/* Live Total Collection Highlight Box */}
