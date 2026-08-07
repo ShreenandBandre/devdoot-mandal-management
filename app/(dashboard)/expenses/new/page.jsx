@@ -28,28 +28,31 @@ export default function NewExpensePage() {
     date: new Date().toISOString().slice(0, 10),
   });
   const [billFile, setBillFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState(false);
+
+  // Handle file selection and convert to Base64 preview
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+      setBillFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result); // Base64 string
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
     setSaving(true);
     setSuccessMessage(false);
-    let billUrl = "";
 
     try {
-      // Safely handle file upload if attached
-      if (billFile) {
-        const fd = new FormData();
-        fd.append("file", billFile);
-        const upRes = await fetch("/api/upload", { method: "POST", body: fd });
-        if (upRes.ok) {
-          const upData = await upRes.json();
-          billUrl = upData.url || "";
-        } else {
-          console.warn("Bill file upload skipped due to storage restriction on Vercel.");
-        }
-      }
+      // Use previewUrl (Base64) directly as billUrl so it saves safely inside MongoDB without local folder issues
+      const billUrl = previewUrl || "";
 
       const res = await fetch("/api/expenses", {
         method: "POST",
@@ -69,9 +72,10 @@ export default function NewExpensePage() {
           date: new Date().toISOString().slice(0, 10),
         });
         setBillFile(null);
+        setPreviewUrl("");
         setTimeout(() => {
           setSuccessMessage(false);
-          router.push("/expenses"); // Automatically redirect back to expenses list after success
+          router.push("/expenses");
         }, 1500);
       } else {
         const errData = await res.json();
@@ -181,8 +185,21 @@ export default function NewExpensePage() {
               type="file"
               accept="image/*,application/pdf"
               className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all border border-gray-300 rounded-xl p-2 bg-white shadow-sm"
-              onChange={(e) => setBillFile(e.target.files[0])}
+              onChange={handleFileChange}
             />
+            {previewUrl && (
+              <div className="mt-3 flex items-center gap-3 bg-orange-50/50 p-3 rounded-xl border border-orange-100">
+                <span className="text-xs font-bold text-orange-800">Preview Attached:</span>
+                <a 
+                  href={previewUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-orange-700 underline font-medium hover:text-orange-900"
+                >
+                  Click to View Image Preview
+                </a>
+              </div>
+            )}
           </Field>
 
           <div className="pt-4">
