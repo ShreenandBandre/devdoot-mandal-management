@@ -81,8 +81,10 @@ export default function ExpensesListPage() {
             <option value="Sound System">Sound System</option>
             <option value="Lighting">Lighting</option>
             <option value="Prasad">Prasad</option>
-            <option value="Food">Food</option>
-            <option value="Miscellaneous">Misc</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Printing">Printing</option>
+            <option value="Electricity">Electricity</option>
+            <option value="Miscellaneous">Miscellaneous</option>
           </select>
         </div>
       </div>
