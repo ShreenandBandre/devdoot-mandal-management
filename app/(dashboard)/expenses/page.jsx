@@ -1,5 +1,7 @@
 // app/(dashboard)/expenses/page.jsx
 "use client";
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -7,11 +9,11 @@ export default function ExpensesListPage() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [selectedImage, setSelectedImage] = useState(null); // Modal state for viewing bill
 
   useEffect(() => {
     async function loadData() {
       try {
-        // Added cache: "no-store" to prevent caching old expenses
         const res = await fetch("/api/expenses", { cache: "no-store" });
         if (!res.ok) {
           throw new Error("Failed to fetch expenses");
@@ -127,14 +129,12 @@ export default function ExpensesListPage() {
                     </td>
                     <td className="p-4 text-center">
                       {exp.billUrl ? (
-                        <a
-                          href={exp.billUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block text-orange-700 hover:text-orange-800 underline font-medium text-xs bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200"
+                        <button
+                          onClick={() => setSelectedImage(exp.billUrl)}
+                          className="inline-block text-orange-700 hover:text-orange-800 underline font-medium text-xs bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 cursor-pointer"
                         >
                           View Bill
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-xs text-gray-400 italic">No bill</span>
                       )}
@@ -146,6 +146,30 @@ export default function ExpensesListPage() {
           </div>
         )}
       </div>
+
+      {/* Bill Image Modal Popup */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-4 shadow-2xl relative flex flex-col items-center">
+            <div className="w-full flex justify-between items-center mb-3 border-b pb-2">
+              <h3 className="font-bold text-gray-900 text-base">Expense Bill Receipt</h3>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="text-gray-500 hover:text-gray-800 font-bold text-lg px-2 py-1 rounded-lg bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-auto w-full flex justify-center bg-gray-100 rounded-xl p-2">
+              <img
+                src={selectedImage}
+                alt="Bill Receipt"
+                className="max-h-[70vh] object-contain rounded-lg shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
