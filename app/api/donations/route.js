@@ -12,7 +12,7 @@ export async function GET(req) {
   await connectDB();
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
+  const limit = parseInt(searchParams.get("limit") || "500");
   const q = searchParams.get("q");
   const paymentMode = searchParams.get("paymentMode");
   const collector = searchParams.get("collector");
