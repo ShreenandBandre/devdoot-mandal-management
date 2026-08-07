@@ -11,12 +11,12 @@ export default function ExpensesListPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("/api/expenses");
+        // Added cache: "no-store" to prevent caching old expenses
+        const res = await fetch("/api/expenses", { cache: "no-store" });
         if (!res.ok) {
           throw new Error("Failed to fetch expenses");
         }
         const data = await res.json();
-        // Safe check to ensure expenses is always an array
         const list = Array.isArray(data) ? data : (data.expenses || []);
         setExpenses(list);
       } catch (err) {
