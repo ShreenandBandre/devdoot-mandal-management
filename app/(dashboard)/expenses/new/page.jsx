@@ -35,37 +35,53 @@ export default function NewExpensePage() {
     e.preventDefault();
     setSaving(true);
     setSuccessMessage(false);
-    let billUrl;
-    if (billFile) {
-      const fd = new FormData();
-      fd.append("file", billFile);
-      const upRes = await fetch("/api/upload", { method: "POST", body: fd });
-      ({ url: billUrl } = await upRes.json());
-    }
-    const res = await fetch("/api/expenses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, amount: Number(form.amount), billUrl }),
-    });
-    setSaving(false);
-    
-    if (res.ok) {
-      setSuccessMessage(true);
-      setForm({
-        title: "",
-        category: CATEGORIES[0],
-        amount: "",
-        paymentMode: "Cash",
-        vendor: "",
-        description: "",
-        date: new Date().toISOString().slice(0, 10),
+    let billUrl = "";
+
+    try {
+      // Safely handle file upload if attached
+      if (billFile) {
+        const fd = new FormData();
+        fd.append("file", billFile);
+        const upRes = await fetch("/api/upload", { method: "POST", body: fd });
+        if (upRes.ok) {
+          const upData = await upRes.json();
+          billUrl = upData.url || "";
+        } else {
+          console.warn("Bill file upload skipped due to storage restriction on Vercel.");
+        }
+      }
+
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, amount: Number(form.amount), billUrl }),
       });
-      setBillFile(null);
-      setTimeout(() => {
-        setSuccessMessage(false);
-      }, 4000);
-    } else {
-      alert("Failed to save expense");
+
+      if (res.ok) {
+        setSuccessMessage(true);
+        setForm({
+          title: "",
+          category: CATEGORIES[0],
+          amount: "",
+          paymentMode: "Cash",
+          vendor: "",
+          description: "",
+          date: new Date().toISOString().slice(0, 10),
+        });
+        setBillFile(null);
+        setTimeout(() => {
+          setSuccessMessage(false);
+          router.push("/expenses"); // Automatically redirect back to expenses list after success
+        }, 1500);
+      } else {
+        const errData = await res.json();
+        alert(`Failed to save expense: ${errData.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      console.error("Submission Error:", err);
+      alert("An unexpected error occurred while saving the expense.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -79,7 +95,7 @@ export default function NewExpensePage() {
 
         {successMessage && (
           <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm p-4 rounded-xl mb-6 shadow-sm font-medium">
-            ✅ Expense saved successfully!
+            ✅ Expense saved successfully! Redirecting...
           </div>
         )}
 
