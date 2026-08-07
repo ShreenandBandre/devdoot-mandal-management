@@ -1,3 +1,4 @@
+// app/api/dashboard/stats/route.js
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Donation from "@/lib/models/Donation";
@@ -9,6 +10,12 @@ import { verifyToken } from "@/lib/auth";
 function startOfDay(d = new Date()) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
   return x;
 }
 
@@ -38,6 +45,14 @@ export async function GET(req) {
 
     await connectDB();
 
+    const { searchParams } = new URL(req.url);
+    const selectedDateParam = searchParams.get("date");
+
+    // Target date range for custom selected day
+    const targetDate = selectedDateParam ? new Date(selectedDateParam) : new Date();
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
+
     const today = startOfDay();
     const week = startOfWeek();
     const month = startOfMonth();
@@ -51,6 +66,10 @@ export async function GET(req) {
       todayCollection,
       todayCashCollection,
       todayUpiCollection,
+      selectedDayCollection,
+      selectedDayCash,
+      selectedDayUpi,
+      selectedDayExpenses,
       weekCollection,
       monthCollection,
       totalCollection,
@@ -64,21 +83,45 @@ export async function GET(req) {
       avgDonation,
       topDonation,
     ] = await Promise.all([
-      // Today Total
+      // Real Today Total
       Donation.aggregate([
         { $match: { ...donationFilter, createdAt: { $gte: today } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
-      // Today Cash
+      // Real Today Cash
       Donation.aggregate([
         { $match: { ...donationFilter, paymentMode: "Cash", createdAt: { $gte: today } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
-      // Today UPI
+      // Real Today UPI
       Donation.aggregate([
         { $match: { ...donationFilter, paymentMode: "UPI", createdAt: { $gte: today } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Selected Date Total Collections
+      Donation.aggregate([
+        { $match: { ...donationFilter, createdAt: { $gte: dayStart, $lte: dayEnd } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Selected Date Cash Collection
+      Donation.aggregate([
+        { $match: { ...donationFilter, paymentMode: "Cash", createdAt: { $gte: dayStart, $lte: dayEnd } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Selected Date UPI Collection
+      Donation.aggregate([
+        { $match: { ...donationFilter, paymentMode: "UPI", createdAt: { $gte: dayStart, $lte: dayEnd } } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).then(sum),
+
+      // Selected Date Expenses
+      Expense.aggregate([
+        { $match: { ...expenseFilter, date: { $gte: dayStart, $lte: dayEnd } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]).then(sum),
 
@@ -150,6 +193,9 @@ export async function GET(req) {
         todayCollection,
         todayCashCollection,
         todayUpiCollection,
+        selectedDayCollection,
+        selectedDayCash,
+        selectedDayUpi,
         weekCollection,
         monthCollection,
         totalCollection,
@@ -159,11 +205,13 @@ export async function GET(req) {
       },
       expense: {
         todayExpenses,
+        selectedDayExpenses,
         monthExpenses,
         totalExpenses,
       },
       financial: {
         netBalance: totalCollection - totalExpenses,
+        selectedDayNet: selectedDayCollection - selectedDayExpenses,
       },
       other: {
         volunteerCount,

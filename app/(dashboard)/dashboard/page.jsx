@@ -6,14 +6,21 @@ import StatCard from "@/components/dashboard/StatCard";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats", { cache: "no-store" })
+    setLoading(true);
+    fetch(`/api/dashboard/stats?date=${selectedDate}`, { cache: "no-store" })
       .then((r) => r.json())
-      .then(setStats);
-  }, []);
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [selectedDate]);
 
-  if (!stats) {
+  if (!stats || loading) {
     return (
       <div className="flex h-[80vh] items-center justify-center bg-gray-50">
         <div className="text-center space-y-3">
@@ -28,12 +35,24 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-8 text-gray-900">
         {/* Top Banner & Quick Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
             <p className="text-sm text-gray-600 mt-1">Real-time financial summary and contribution statistics.</p>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Date Picker Filter */}
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 shadow-sm">
+              <span className="text-xs font-semibold text-gray-700">Select Date:</span>
+              <input
+                type="date"
+                className="text-xs font-medium text-gray-900 bg-transparent focus:outline-none"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </div>
+
             <Link
               href="/donations/new"
               className="bg-orange-700 hover:bg-orange-800 text-white font-medium px-4 py-2.5 rounded-xl transition-all shadow-sm text-sm text-center"
@@ -49,6 +68,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Selected Date Specific Section */}
+        <section className="space-y-3 bg-orange-50/60 p-5 rounded-2xl border border-orange-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-orange-900 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-600"></span> 
+              Stats for Date: <span className="underline">{selectedDate}</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard label="Selected Day Total" value={stats.income.selectedDayCollection} money highlight />
+            <StatCard label="Selected Day Cash" value={stats.income.selectedDayCash} money />
+            <StatCard label="Selected Day UPI" value={stats.income.selectedDayUpi} money />
+            <StatCard label="Selected Day Expenses" value={stats.expense.selectedDayExpenses} money />
+          </div>
+        </section>
+
         {/* Income Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -57,7 +92,7 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Today's Collection" value={stats.income.todayCollection} money highlight />
+            <StatCard label="Today's Collection" value={stats.income.todayCollection} money />
             <StatCard label="Today's Cash" value={stats.income.todayCashCollection} money />
             <StatCard label="Today's UPI" value={stats.income.todayUpiCollection} money />
             <StatCard label="Total Receipts" value={stats.income.totalReceipts} />
@@ -111,4 +146,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
