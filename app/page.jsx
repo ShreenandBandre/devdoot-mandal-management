@@ -1,4 +1,4 @@
-```jsx
+
 // app/page.jsx
 import Link from "next/link";
 import { connectDB } from "@/lib/db";
@@ -290,4 +290,4 @@ function InfoCard({
     </div>
   );
 }
-```
+
