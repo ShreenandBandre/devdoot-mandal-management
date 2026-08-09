@@ -7,15 +7,10 @@ import { requireUser } from "@/lib/getSession";
 
 export async function GET(req) {
   try {
-    const user = await requireUser(req);
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Admin only" }, { status: 403 });
-    }
-
     await connectDB();
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "100"); // increased limit to fetch all easily
+    const limit = parseInt(searchParams.get("limit") || "100"); 
     const q = searchParams.get("q");
     const category = searchParams.get("category");
     const from = searchParams.get("from");
@@ -34,7 +29,7 @@ export async function GET(req) {
       Expense.countDocuments(filter),
     ]);
 
-    // Returning both 'expenses' and 'items' for maximum frontend compatibility
+    // Publicly returning expenses and items
     return NextResponse.json({ 
       expenses: items, 
       items, 
