@@ -32,16 +32,41 @@ export default function NewExpensePage() {
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState(false);
 
-  // Handle file selection and convert to Base64 preview
+  // Handle file selection, compress image for mobile, and convert safely
   function handleFileChange(e) {
     const file = e.target.files[0];
     if (file) {
-      setBillFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result); // Base64 string
-      };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800; // Resize width to optimize mobile heavy uploads
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * (scaleSize < 1 ? scaleSize : 1);
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Compress image to JPEG quality 0.7
+            const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+            setBillFile(file);
+            setPreviewUrl(compressedDataUrl);
+          };
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For PDFs or other documents
+        setBillFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   }
 
@@ -51,7 +76,6 @@ export default function NewExpensePage() {
     setSuccessMessage(false);
 
     try {
-      // Use previewUrl (Base64) directly as billUrl so it saves safely inside MongoDB without local folder issues
       const billUrl = previewUrl || "";
 
       const res = await fetch("/api/expenses", {
@@ -59,6 +83,8 @@ export default function NewExpensePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, amount: Number(form.amount), billUrl }),
       });
+
+      const data = await res.json();
 
       if (res.ok) {
         setSuccessMessage(true);
@@ -78,12 +104,11 @@ export default function NewExpensePage() {
           router.push("/expenses");
         }, 1500);
       } else {
-        const errData = await res.json();
-        alert(`Failed to save expense: ${errData.error || "Unknown error"}`);
+        alert(`Failed to save expense: ${data.error || "Unknown server error"}`);
       }
     } catch (err) {
       console.error("Submission Error:", err);
-      alert("An unexpected error occurred while saving the expense.");
+      alert(`Network error: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -196,7 +221,7 @@ export default function NewExpensePage() {
                   rel="noopener noreferrer"
                   className="text-xs text-orange-700 underline font-medium hover:text-orange-900"
                 >
-                  Click to View Image Preview
+                  Click to View Compressed Image
                 </a>
               </div>
             )}
