@@ -1,9 +1,9 @@
-// app/api/expenses/route.js
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Expense from "@/lib/models/Expense";
 import { logActivity } from "@/lib/logActivity";
-import { requireUser } from "@/lib/getSession";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth";
 
 export async function GET(req) {
   try {
@@ -29,7 +29,6 @@ export async function GET(req) {
       Expense.countDocuments(filter),
     ]);
 
-    // Publicly returning expenses and items
     return NextResponse.json({ 
       expenses: items, 
       items, 
@@ -45,21 +44,31 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const user = await requireUser(req);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Securely verify user session using cookies
+    const cookieStore = cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
+
+    const user = await verifyToken(token);
+    if (!user) {
+      return NextResponse.json({ error: "Invalid session token" }, { status: 401 });
+    }
 
     await connectDB();
     const body = await req.json();
     const expense = await Expense.create({
       ...body,
-      addedBy: user.id,
+      addedBy: user.id || user._id,
       festivalYear: parseInt(process.env.FESTIVAL_YEAR || "2026"),
     });
 
     await logActivity({
       action: "EXPENSE_ADDED", 
-      performedBy: user.id, 
-      performedByName: user.name,
+      performedBy: user.id || user._id, 
+      performedByName: user.name || "Admin",
       targetType: "Expense", 
       targetId: expense._id, 
       meta: { amount: body.amount, category: body.category },
